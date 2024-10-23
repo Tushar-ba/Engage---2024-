@@ -1,7 +1,7 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
-import Lending from './Lending.jsx';
-import Borrowing from './Borrowing.jsx';
+import { useNavigate } from "react-router-dom";
+// import Lending from './Lending.jsx';
+// import Borrowing from './Borrowing.jsx';
 import borrow from "../../public/Lending.png";
 import lending from "../../public/Lending2.webp"
 
