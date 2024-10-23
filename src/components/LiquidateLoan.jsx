@@ -33,10 +33,12 @@ const LiquidateLoan = () => {
 
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
+      console.log(signer)
 
       const contract = new ethers.Contract(MICROLOAN_ADDRESS, MICROLOAN_ABI, signer);
       // const parsedLoanId = loanId; // Parse the loan ID
-      const parsedLoanId = values?.loanid;
+      const parsedLoanId = values.loanid;
+      console.log(parsedLoanId)
 
       const tx = await contract.liquidateLoan(parsedLoanId);
 

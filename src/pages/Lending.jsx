@@ -7,10 +7,12 @@ import Search from '../components/Search.jsx'
 const Lending = () => {
   return (
     <>
+    <div className='bg-gradient-to-r from-violet-500 to-fuchsia-500 h-[100vh]'>
     <LiquidateLoan/>
     <ActiveLoans/>
     <FundLoan/>
     <Search/>
+    </div>
     </>
   )
 }

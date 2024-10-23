@@ -5,8 +5,10 @@ import RepayLoan from "../components/RepayLoan"
 const Borrowing = () => {
   return (
     <>
+    <div>
     <CreateLoanRequest/>
     <RepayLoan/>
+    </div>
     </>
   )
 }

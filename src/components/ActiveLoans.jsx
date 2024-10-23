@@ -2,33 +2,44 @@ import { useEffect, useState } from 'react';
 import { ethers } from 'ethers';
 import MICROLOAN_ABI from './abi.json';
 import { MICROLOAN_ADDRESS } from './contractAddress';
-import { Typography,Card, Space ,List} from "antd";
-import axios from 'axios'; // Make sure to import axios
+import { Typography, Card, Space, List } from "antd";
+import axios from 'axios';
 
-
-const { Paragraph,Title } = Typography;
+const { Paragraph, Title } = Typography;
 
 const ActiveLoans = () => {
   const [activeLoans, setActiveLoans] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [imageUrl,setImageUrl] = useState('');
-  const [id,setId] = useState("");
-  const [address, setAddress]= ("")
-  
 
-  
+
+  const fetchNFTData = async (address, identifier) => {
+    try {
+      let config = {
+        method: 'get',
+        maxBodyLength: Infinity,
+        url: `https://testnets-api.opensea.io/api/v2/chain/amoy/contract/${address}/nfts/${identifier}`,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      };
+      const response = await axios.request(config);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching NFT data:', error);
+      return null;
+    }
+  };
+
   const fetchActiveLoans = async () => {
     try {
       setError('');
       setIsLoading(true);
 
-      // Check if window.ethereum exists
       if (!window.ethereum) {
         throw new Error('Please install MetaMask or another Ethereum wallet.');
       }
 
-      // Request account access
       const accounts = await window.ethereum.request({
         method: 'eth_requestAccounts',
       });
@@ -37,42 +48,37 @@ const ActiveLoans = () => {
         throw new Error('No authorized accounts found');
       }
 
-      // Create provider and signer
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
-
-      // Create contract instance
       const contract = new ethers.Contract(MICROLOAN_ADDRESS, MICROLOAN_ABI, signer);
-
-       
+      
       const loanIds = await contract.getActiveLoanRequests();
-
-       
+      
       const loans = await Promise.all(
         loanIds.map(async (loanId) => {
           const loan = await contract.loanRequests(loanId);
-          const imageUrl = await fetchNFTData(loan.collateralToken, loan.collateralId.toString());
-          setImageUrl(imageUrl)
+          const nftData = await fetchNFTData(loan.collateralToken, loan.collateralId.toString());
+          
           return {
             id: loanId.toString(),
             borrower: loan.borrower,
             collateralToken: loan.collateralToken,
-            collateralId: loan.collateralId.toString(), // Convert BigInt to string
-            loanAmount: ethers.formatUnits(loan.loanAmount, 18), // Convert BigInt to Ether with formatUnits
-            interestRate: loan.interestRate.toString(), // Convert BigInt to string
-            duration: loan.duration.toString(), // Convert BigInt to string
-            startTime: new Date(Number(loan.startTime) * 1000).toLocaleString(), // Convert BigInt to number for date
+            collateralId: loan.collateralId.toString(),
+            loanAmount: ethers.formatUnits(loan.loanAmount, 18),
+            interestRate: loan.interestRate.toString(),
+            duration: loan.duration.toString(),
+            startTime: new Date(Number(loan.startTime) * 1000).toLocaleString(),
             lender: loan.lender === ethers.ZeroAddress ? 'None' : loan.lender,
             isActive: loan.isActive,
             isFunded: loan.isFunded,
             isRepaid: loan.isRepaid,
             isLiquidated: loan.isLiquidated,
+            nftData: nftData
           };
         })
       );
 
       setActiveLoans(loans);
-      console.log(loans)
     } catch (error) {
       console.error('Error fetching active loans:', error);
       setError(error.message || 'Failed to fetch active loans');
@@ -81,39 +87,14 @@ const ActiveLoans = () => {
     }
   };
 
-  const fetchNFTData = async (address,identifier) => {
-    try {
-      // Make sure to replace ':address' with the actual address
-      let config = {
-        method: 'get',
-        maxBodyLength: Infinity,
-        url: `https://testnets-api.opensea.io/api/v2/chain/amoy/contract/0x68f4d8e650c5b89983f531f9451717002e35c030/nfts/`, // Fixed URL
-        headers: {
-          'Content-Type': 'application/json',
-          // You need to add your Moralis API key here
-        },
-      };
-      const response = await axios.request(config);
-      setImageUrl(response.data); // Set the fetched data to state
-      
-      setError(null); // Reset error state if the request is successful
-    } catch (error) {
-      setError(error.message); // Handle errors
-      setImageUrl(null); // Reset nftData on error
-    }
-  };
-
-
   useEffect(() => {
     fetchActiveLoans();
     
-    // Optional: Listen for account changes
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', fetchActiveLoans);
       window.ethereum.on('chainChanged', () => window.location.reload());
     }
 
-    // Cleanup listeners
     return () => {
       if (window.ethereum) {
         window.ethereum.removeListener('accountsChanged', fetchActiveLoans);
@@ -121,8 +102,6 @@ const ActiveLoans = () => {
       }
     };
   }, []);
-
-  
 
   if (error) {
     return (
@@ -139,62 +118,57 @@ const ActiveLoans = () => {
       {isLoading ? (
         <Paragraph>Loading...</Paragraph>
       ) : activeLoans.length > 0 ? (
-        <>
-           <List
-            dataSource={activeLoans}
-            renderItem={(loan) => 
+        <List
+          dataSource={activeLoans}
+          renderItem={(loan) => (
             <List.Item>
               <Card
                 hoverable
                 style={{ width: 240 }}
-                cover={<img alt="example" src={imageUrl?.nft?.image_url} />}
+                cover={
+                  <img 
+                    alt={loan.nftData?.nft?.name || "NFT"} 
+                    src={loan.nftData?.nft?.display_image_url} 
+                    style={{ height: 240, objectFit: 'cover' }}
+                  />
+                }
               >
                 <>
-                  <Space align="center">
-                    <Paragraph strong>Loan ID:</Paragraph>
-                    <Paragraph>{loan.id}</Paragraph>
-                  </Space>
-                  <Space align='center'>
-                    <Paragraph strong>Borrower:</Paragraph>
-                    <Paragraph>{loan.borrower}</Paragraph>
-                  </Space>
-                  <Space align='center'>
-                    <Paragraph strong>Collateral Token:</Paragraph>
-                    <Paragraph>{loan.collateralToken}</Paragraph>
-                  </Space>
-                  <Space align='center'>
-                    <Paragraph strong>Collateral ID:</Paragraph>
-                    <Paragraph>{loan.collateralId}</Paragraph>
-                  </Space>
-                  <Space align='center'>
-                    <Paragraph strong>Loan Amount:</Paragraph>
-                    <Paragraph>{loan.loanAmount} ETH</Paragraph>
-                  </Space>
-                  <Space align='center'>
-                    <Paragraph strong>Interest Rate:</Paragraph>
-                    <Paragraph>{loan.interestRate}%</Paragraph>
-                  </Space>
-                  <Space align='center'>
-                    <Paragraph strong>Duration:</Paragraph>
-                    <Paragraph>{loan.duration} seconds</Paragraph>
-                  </Space>
-                  <Space align='center'>
-                    <Paragraph strong>Start Time:</Paragraph>
-                    <Paragraph>{loan.startTime}</Paragraph>
-                  </Space>
-                  <Space align='center'>
-                    <Paragraph strong>Lender:</Paragraph>
-                    <Paragraph>{loan.lender}</Paragraph>
-                  </Space>
-                  <Space align='center'>
-                    <Paragraph strong>Status:</Paragraph>
-                    <Paragraph>{loan.isRepaid ? 'Repaid' : loan.isLiquidated ? 'Liquidated' : 'Active'}</Paragraph>
+                  <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                    <Space align="center">
+                      <Paragraph strong>Loan ID:</Paragraph>
+                      <Paragraph>{loan.id}</Paragraph>
+                    </Space>
+                    <Space align='center'>
+                      <Paragraph strong>Borrower:</Paragraph>
+                      <Paragraph>{`${loan.borrower.slice(0, 6)}...${loan.borrower.slice(-4)}`}</Paragraph>
+                    </Space>
+                    <Space align='center'>
+                      <Paragraph strong>Collateral ID:</Paragraph>
+                      <Paragraph>{loan.collateralId}</Paragraph>
+                    </Space>
+                    <Space align='center'>
+                      <Paragraph strong>Loan Amount:</Paragraph>
+                      <Paragraph>{loan.loanAmount} ETH</Paragraph>
+                    </Space>
+                    <Space align='center'>
+                      <Paragraph strong>Interest Rate:</Paragraph>
+                      <Paragraph>{loan.interestRate}%</Paragraph>
+                    </Space>
+                    <Space align='center'>
+                      <Paragraph strong>Duration:</Paragraph>
+                      <Paragraph>{loan.duration} seconds</Paragraph>
+                    </Space>
+                    <Space align='center'>
+                      <Paragraph strong>Status:</Paragraph>
+                      <Paragraph>{loan.isRepaid ? 'Repaid' : loan.isLiquidated ? 'Liquidated' : 'Active'}</Paragraph>
+                    </Space>
                   </Space>
                 </>
               </Card>
-            </List.Item>}
-          />
-        </>
+            </List.Item>
+          )}
+        />
       ) : (
         <Paragraph>No active loans available.</Paragraph>
       )}

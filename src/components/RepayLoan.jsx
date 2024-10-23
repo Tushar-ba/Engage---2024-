@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ethers } from 'ethers';
 import MICROLOAN_ABI from './abi.json';
 import { MICROLOAN_ADDRESS } from './contractAddress';
+import { Typography,Form,Input,Button } from "antd";
 
 const RepayLoan = () => {
   const [loanId, setLoanId] = useState('');
@@ -10,7 +11,7 @@ const RepayLoan = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const handleRepayLoan = async () => {
+  const handleRepayLoan = async (values) => {
     try {
       setError('');
       setSuccess('');
@@ -32,8 +33,8 @@ const RepayLoan = () => {
       const signer = await provider.getSigner();
 
       const contract = new ethers.Contract(MICROLOAN_ADDRESS, MICROLOAN_ABI, signer);
-      const parsedLoanId = loanId; // Parse the loan ID
-      const parsedRepaymentAmount = ethers.parseUnits(repaymentAmount, 18); // Convert ETH to Wei
+      const parsedLoanId = values.loanId; // Parse the loan ID
+      const parsedRepaymentAmount = ethers.parseUnits(values.repaymentAmount, 18); // Convert ETH to Wei
 
       const tx = await contract.repayLoan(parsedLoanId, {
         value: parsedRepaymentAmount,
@@ -57,7 +58,17 @@ const RepayLoan = () => {
       {success && <div className="text-green-500 mb-4">{success}</div>}
 
       <div className="space-y-4">
-        <div>
+        <Form
+         layout="vertical"
+         style={{
+           maxWidth: 300,
+         }}
+         onFinish={handleRepayLoan}
+        >
+        <Form.Item label="Loan Id" name="loanId">
+          <Input />
+        </Form.Item>
+        {/* <div>
           <label htmlFor="loanId" className="block text-sm font-medium">
             Loan ID
           </label>
@@ -70,9 +81,12 @@ const RepayLoan = () => {
             placeholder="Enter loan ID"
             required
           />
-        </div>
+        </div> */}
         <div>
-          <label htmlFor="repaymentAmount" className="block text-sm font-medium">
+        <Form.Item label="Repayment Amount (MATIC)" name="repaymentAmount">
+          <Input />
+        </Form.Item>
+          {/* <label htmlFor="repaymentAmount" className="block text-sm font-medium">
             Repayment Amount (ETH)
           </label>
           <input
@@ -83,17 +97,24 @@ const RepayLoan = () => {
             className="mt-1 block w-full border border-gray-300 rounded p-2"
             placeholder="Enter repayment amount in ETH"
             required
-          />
+          /> */}
         </div>
 
+        <Form.Item>
+          <Button type="primary" htmlType="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Repaying...' : 'Repay Loan'}
+          </Button>
+        </Form.Item>
+
         {/* Submit Button */}
-        <button
+        {/* <button
           onClick={handleRepayLoan}
           disabled={isSubmitting}
           className="bg-blue-500 text-white px-4 py-2 rounded mt-4"
         >
           {isSubmitting ? 'Repaying...' : 'Repay Loan'}
-        </button>
+        </button> */}
+        </Form>
       </div>
     </div>
   );

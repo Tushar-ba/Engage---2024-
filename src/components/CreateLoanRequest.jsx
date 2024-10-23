@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ethers } from 'ethers';
 import MICROLOAN_ABI from './abi.json';
 import { MICROLOAN_ADDRESS } from './contractAddress';
+import { Typography,Form,Input,Button } from "antd";
 
 const CreateLoanRequest = () => {
   const [collateralToken, setCollateralToken] = useState('');
@@ -13,7 +14,7 @@ const CreateLoanRequest = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const handleCreateLoanRequest = async () => {
+  const handleCreateLoanRequest = async (values) => {
     try {
       setError('');
       setSuccess('');
@@ -36,13 +37,19 @@ const CreateLoanRequest = () => {
        
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
+      
 
       
       const contract = new ethers.Contract(MICROLOAN_ADDRESS, MICROLOAN_ABI, signer);
-      const parsedCollateralId = collateralId; 
-      const parsedLoanAmount = ethers.parseUnits(loanAmount, 18); 
-      const parsedInterestRate = interestRate; 
-      const parsedDuration = duration; 
+      const collateralToken = values.collateralToken
+      const parsedCollateralId = values.collateralId; 
+      console.log(parsedCollateralId)
+      const parsedLoanAmount = ethers.parseUnits(values.loanAmount, 18); 
+      console.log(parsedLoanAmount)
+      const parsedInterestRate = values.interestRate; 
+      console.log(parsedInterestRate)
+      const parsedDuration = values.duration; 
+      console.log(parsedDuration)
 
       console.log("hello")
       const tx = await contract.createLoanRequest(
@@ -74,8 +81,16 @@ const CreateLoanRequest = () => {
       
        
       <div className="space-y-4">
+        <Form
+        layout="vertical"
+        style={{ maxWidth: 300,}}
+        onFinish={handleCreateLoanRequest}>
         <div>
-          <label htmlFor="collateralToken" className="block text-sm font-medium">
+
+        <Form.Item label=" Collateral Token Address" name="collateralToken">
+          <Input />
+        </Form.Item>
+          {/* <label htmlFor="collateralToken" className="block text-sm font-medium">
             Collateral Token Address
           </label>
           <input
@@ -85,10 +100,13 @@ const CreateLoanRequest = () => {
             onChange={(e) => setCollateralToken(e.target.value)}
             className="mt-1 block w-full border border-gray-300 rounded p-2"
             placeholder="Enter token contract address"
-          />
+          /> */}
         </div>
         <div>
-          <label htmlFor="collateralId" className="block text-sm font-medium">
+        <Form.Item label=" Collateral Token ID (NFT ID)" name="collateralId">
+          <Input />
+        </Form.Item>
+          {/* <label htmlFor="collateralId" className="block text-sm font-medium">
             Collateral Token ID (NFT ID)
           </label>
           <input
@@ -98,10 +116,13 @@ const CreateLoanRequest = () => {
             onChange={(e) => setCollateralId(e.target.value)}
             className="mt-1 block w-full border border-gray-300 rounded p-2"
             placeholder="Enter collateral ID"
-          />
+          /> */}
         </div>
         <div>
-          <label htmlFor="loanAmount" className="block text-sm font-medium">
+        <Form.Item label="Loan Amount (MATIC)" name="loanAmount">
+          <Input />
+        </Form.Item>
+          {/* <label htmlFor="loanAmount" className="block text-sm font-medium">
             Loan Amount (ETH)
           </label>
           <input
@@ -111,10 +132,13 @@ const CreateLoanRequest = () => {
             onChange={(e) => setLoanAmount(e.target.value)}
             className="mt-1 block w-full border border-gray-300 rounded p-2"
             placeholder="Enter loan amount in ETH"
-          />
+          /> */}
         </div>
         <div>
-          <label htmlFor="interestRate" className="block text-sm font-medium">
+        <Form.Item label="Interest Rate (%)" name="interestRate">
+          <Input />
+        </Form.Item>
+          {/* <label htmlFor="interestRate" className="block text-sm font-medium">
             Interest Rate (%)
           </label>
           <input
@@ -124,10 +148,13 @@ const CreateLoanRequest = () => {
             onChange={(e) => setInterestRate(e.target.value)}
             className="mt-1 block w-full border border-gray-300 rounded p-2"
             placeholder="Enter interest rate as a percentage"
-          />
+          /> */}
         </div>
         <div>
-          <label htmlFor="duration" className="block text-sm font-medium">
+        <Form.Item label=" Duration (seconds)" name="duration">
+          <Input />
+        </Form.Item>
+          {/* <label htmlFor="duration" className="block text-sm font-medium">
             Duration (seconds)
           </label>
           <input
@@ -137,17 +164,21 @@ const CreateLoanRequest = () => {
             onChange={(e) => setDuration(e.target.value)}
             className="mt-1 block w-full border border-gray-300 rounded p-2"
             placeholder="Enter loan duration in seconds"
-          />
+          /> */}
         </div>
         
         {/* Submit Button */}
-        <button
+        <Button type="primary" htmlType="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Creating...' : 'Create Loan'}
+          </Button>
+        {/* <button
           onClick={handleCreateLoanRequest}
           disabled={isSubmitting}
           className="bg-blue-500 text-white px-4 py-2 rounded mt-4"
         >
           {isSubmitting ? 'Creating...' : 'Create Loan Request'}
-        </button>
+        </button> */}
+        </Form>
       </div>
     </div>
   );
